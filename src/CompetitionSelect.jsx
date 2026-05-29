@@ -50,11 +50,16 @@ export default function CompetitionSelect({ onSelect }) {
 }
 
 const compCss = `
+/* Fondo atmosférico de trofeo (Unsplash, licencia libre). El propio .comp-root
+   es position:fixed, así la foto queda fija (efecto cinemático). Overlay oscuro
+   fuerte encima para que las tarjetas sigan legibles. */
 .comp-root {
   position: fixed; inset: 0; z-index: 90;
   display: flex; align-items: center; justify-content: center;
   background:
-    radial-gradient(120% 70% at 50% 30%, rgba(22,194,100,0.10), transparent 60%),
+    radial-gradient(120% 70% at 50% 25%, rgba(22,194,100,0.08), transparent 55%),
+    linear-gradient(180deg, rgba(10,14,12,0.86), rgba(10,14,12,0.80) 45%, rgba(10,14,12,0.92)),
+    url('https://images.unsplash.com/photo-1514820720301-4c4790309f46?w=1200&q=70&auto=format&fit=crop') center / cover no-repeat,
     var(--bg, #0a0e0c);
   padding: max(24px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom));
   animation: comp-fade 0.3s ease;
@@ -90,6 +95,7 @@ const compCss = `
   color: var(--text, #f2f5f3);
   font-family: 'Archivo', sans-serif;
   cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
   transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
 }
 .comp-card:active:not(:disabled) {
