@@ -26,6 +26,28 @@ function migrarClavesLegacy() {
   }
 }
 
+// Fondo atmosférico de estadio SOLO para la lista de partidos de la jornada.
+// Foto: Unsplash (licencia libre). Fijo (no scrollea) con overlay oscuro fuerte
+// para que tarjetas y banner del bote sigan legibles encima.
+const STADIUM_BG_CSS = `
+.jornada-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(180deg, rgba(10,14,12,0.92), rgba(10,14,12,0.84) 45%, rgba(10,14,12,0.94)),
+    url('https://images.unsplash.com/photo-1694866839396-fafc76941831?w=1200&q=70&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+}
+.jornada-fg { position: relative; z-index: 1; }
+/* Reforzar legibilidad de tarjetas y banner sobre la foto */
+.jornada-fg .match-card { background: #141a16; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+.jornada-fg .bote-banner {
+  background: linear-gradient(100deg, rgba(34,28,10,0.94), rgba(20,18,9,0.94));
+  border-color: rgba(245,197,66,0.45);
+  backdrop-filter: blur(3px);
+}
+`;
+
 const crestColors = ['#16c264','#3b82f6','#f5c542','#ef4444','#a855f7','#ec4899','#14b8a6','#f97316','#0ea5e9','#84cc16'];
 function crestColor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))>>>0; return crestColors[h%crestColors.length]; }
 function ini(name){ return name.replace(/[^A-Za-zÁÉÍÓÚ ]/g,'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
@@ -198,21 +220,25 @@ export default function App(){
       <div className="content fade-in" key={tab+view}>
         {tab==='jugar' && view==='jornada' && (
           <>
-            <div className="screen-title">Jornada {jornada} · {compObj.partidos.length} partidos</div>
-            {hayBote && (
-              <div className="bote-banner">
-                <span className="ico">🔥</span>
-                <span className="txt">Bote acumulado: <b>{bote} fichas</b>. Esta jornada entras pagando <b>media entrada</b>.</span>
+            <style>{STADIUM_BG_CSS}</style>
+            <div className="jornada-bg" aria-hidden="true" />
+            <div className="jornada-fg">
+              <div className="screen-title">Jornada {jornada} · {compObj.partidos.length} partidos</div>
+              {hayBote && (
+                <div className="bote-banner">
+                  <span className="ico">🔥</span>
+                  <span className="txt">Bote acumulado: <b>{bote} fichas</b>. Esta jornada entras pagando <b>media entrada</b>.</span>
+                </div>
+              )}
+              <div className="match-list">
+                {compObj.partidos.map(p=>(
+                  <button className="match-card" key={p.id} onClick={()=>abrirPartido(p)}>
+                    <div className="team"><Crest name={p.local}/><span className="team-name">{p.local}</span></div>
+                    <span className="vs">VS</span>
+                    <div className="team right"><span className="team-name">{p.visit}</span><Crest name={p.visit}/></div>
+                  </button>
+                ))}
               </div>
-            )}
-            <div className="match-list">
-              {compObj.partidos.map(p=>(
-                <button className="match-card" key={p.id} onClick={()=>abrirPartido(p)}>
-                  <div className="team"><Crest name={p.local}/><span className="team-name">{p.local}</span></div>
-                  <span className="vs">VS</span>
-                  <div className="team right"><span className="team-name">{p.visit}</span><Crest name={p.visit}/></div>
-                </button>
-              ))}
             </div>
           </>
         )}
