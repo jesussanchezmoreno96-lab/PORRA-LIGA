@@ -1,22 +1,78 @@
-import { useState, useMemo } from 'react';
-import { PARTIDOS, MESAS, FICHAS_INICIO, JORNADA_INICIAL, MIN_JUGADORES, MAX_JUGADORES } from './data.js';
+import { useState } from 'react';
+import { COMPETICIONES, MESAS, FICHAS_INICIO, MIN_JUGADORES, MAX_JUGADORES, logoEquipo } from './data.js';
 import { generarBots, contarResultados, resultadoDisponible, simularResultadoReal, resolverPorra, costeEntrada } from './logic.js';
 import { usePersistentState } from './usePersistentState.js';
+import SplashScreen from './SplashScreen.jsx';
+import CompetitionSelect from './CompetitionSelect.jsx';
+
+// Migración única: las claves antiguas globales pasan a ser por competición
+// (LaLiga EA Sports). El saldo (porra_saldo) es común y no se migra.
+function migrarClavesLegacy() {
+  try {
+    const pares = [
+      ['porra_bote', 'porra_bote_laliga'],
+      ['porra_jornada', 'porra_jornada_laliga'],
+      ['porra_historial', 'porra_historial_laliga'],
+    ];
+    for (const [viejo, nuevo] of pares) {
+      const v = localStorage.getItem(viejo);
+      if (v !== null && localStorage.getItem(nuevo) === null) {
+        localStorage.setItem(nuevo, v);
+      }
+      if (v !== null) localStorage.removeItem(viejo);
+    }
+  } catch {
+    // ignore
+  }
+}
 
 const crestColors = ['#16c264','#3b82f6','#f5c542','#ef4444','#a855f7','#ec4899','#14b8a6','#f97316','#0ea5e9','#84cc16'];
 function crestColor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))>>>0; return crestColors[h%crestColors.length]; }
 function ini(name){ return name.replace(/[^A-Za-zÁÉÍÓÚ ]/g,'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
 
-function Crest({ name }){
+// Escudo del equipo: usa el logo real (CDN) con fallback al círculo de
+// iniciales si la imagen no carga (404/caída) o el equipo no está mapeado.
+function Crest({ name, size = 30 }){
+  const [failed, setFailed] = useState(false);
+  const logo = logoEquipo(name);
+  if (logo && !failed) {
+    return (
+      <img
+        src={logo}
+        alt={name}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0, verticalAlign: 'middle' }}
+      />
+    );
+  }
   const c = crestColor(name);
-  return <div className="crest" style={{ background: c+'22', color: c }}>{ini(name)}</div>;
+  return (
+    <div
+      className="crest"
+      style={{ width: size, height: size, fontSize: Math.round(size*0.37), display: 'inline-flex', verticalAlign: 'middle', background: c+'22', color: c }}
+    >{ini(name)}</div>
+  );
 }
 
+migrarClavesLegacy();
+
 export default function App(){
+  // Portada de bienvenida: se muestra una vez por sesión (pestaña). Al pulsar
+  // ¡JUGAR! se marca en sessionStorage y no reaparece al navegar entre tabs.
+  const [splash, setSplash] = useState(() => !sessionStorage.getItem('porra_splash_seen'));
+
+  // Competición seleccionada (null = aún en la pantalla de selección).
+  const [comp, setComp] = useState(null);
+  const cid = comp || 'laliga';                 // id efectivo para las claves
+  const compObj = COMPETICIONES[cid];
+
+  // Saldo: común a todas las competiciones (cartera del usuario).
   const [saldo, setSaldo] = usePersistentState('porra_saldo', FICHAS_INICIO);
-  const [historial, setHistorial] = usePersistentState('porra_historial', []);
-  const [bote, setBote] = usePersistentState('porra_bote', 0);
-  const [jornada, setJornada] = usePersistentState('porra_jornada', JORNADA_INICIAL);
+  // Bote, jornada e historial: independientes por competición.
+  const [historial, setHistorial] = usePersistentState(`porra_historial_${cid}`, []);
+  const [bote, setBote] = usePersistentState(`porra_bote_${cid}`, 0);
+  const [jornada, setJornada] = usePersistentState(`porra_jornada_${cid}`, compObj.jornada);
 
   const [tab, setTab] = useState('jugar');
   const [view, setView] = useState('jornada');
@@ -32,7 +88,7 @@ export default function App(){
 
   function reset(){
     if(!confirm('¿Reiniciar el juego? Perderás saldo, historial y bote.')) return;
-    setSaldo(FICHAS_INICIO); setHistorial([]); setBote(0); setJornada(JORNADA_INICIAL);
+    setSaldo(FICHAS_INICIO); setHistorial([]); setBote(0); setJornada(compObj.jornada);
     setView('jornada'); setTab('jugar');
   }
 
@@ -93,19 +149,48 @@ export default function App(){
 
   const cuenta = grupo ? contarResultados(grupo.jugadores) : {};
 
+  if (splash) {
+    return (
+      <SplashScreen
+        onPlay={() => {
+          sessionStorage.setItem('porra_splash_seen', '1');
+          setSplash(false);
+        }}
+      />
+    );
+  }
+
+  if (!comp) {
+    return <CompetitionSelect onSelect={setComp} />;
+  }
+
   return (
     <div className="app-shell">
       <div className="topbar">
         <div className="topbar-title">
-          {view !== 'jornada' && tab==='jugar' ? (
-            <button className="back-btn" onClick={()=>{
-              if(view==='mesa') setView('jornada');
-              else if(view==='grupo') setView('mesa');
-              else if(view==='porra') setView('grupo');
-              else volverInicio();
-            }} aria-label="Volver">‹</button>
-          ) : (<><span>Porra</span><span className="pill">LaLiga</span></>)}
-          {view!=='jornada' && tab==='jugar' && <span style={{fontSize:15}}>Atrás</span>}
+          {tab==='jugar' && view==='jornada' && (
+            <>
+              <button className="back-btn" onClick={()=>setComp(null)} aria-label="Cambiar competición">‹</button>
+              <span className="pill" style={{ background: compObj.color }}>{compObj.pill}</span>
+            </>
+          )}
+          {tab==='jugar' && view!=='jornada' && (
+            <>
+              <button className="back-btn" onClick={()=>{
+                if(view==='mesa') setView('jornada');
+                else if(view==='grupo') setView('mesa');
+                else if(view==='porra') setView('grupo');
+                else volverInicio();
+              }} aria-label="Volver">‹</button>
+              <span style={{fontSize:15}}>Atrás</span>
+            </>
+          )}
+          {tab!=='jugar' && (
+            <>
+              <span>Porra</span>
+              <span className="pill" style={{ background: compObj.color }}>{compObj.pill}</span>
+            </>
+          )}
         </div>
         <div className="saldo"><span className="coin">€</span>{saldo}</div>
       </div>
@@ -113,7 +198,7 @@ export default function App(){
       <div className="content fade-in" key={tab+view}>
         {tab==='jugar' && view==='jornada' && (
           <>
-            <div className="screen-title">Jornada {jornada} · {PARTIDOS.length} partidos</div>
+            <div className="screen-title">Jornada {jornada} · {compObj.partidos.length} partidos</div>
             {hayBote && (
               <div className="bote-banner">
                 <span className="ico">🔥</span>
@@ -121,7 +206,7 @@ export default function App(){
               </div>
             )}
             <div className="match-list">
-              {PARTIDOS.map(p=>(
+              {compObj.partidos.map(p=>(
                 <button className="match-card" key={p.id} onClick={()=>abrirPartido(p)}>
                   <div className="team"><Crest name={p.local}/><span className="team-name">{p.local}</span></div>
                   <span className="vs">VS</span>
@@ -135,7 +220,7 @@ export default function App(){
         {tab==='jugar' && view==='mesa' && partido && (
           <>
             <div className="match-banner">
-              <div className="names">{partido.local} <span className="vs">VS</span> {partido.visit}</div>
+              <div className="names" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,flexWrap:'wrap'}}><Crest name={partido.local} size={32}/> {partido.local} <span className="vs">VS</span> <Crest name={partido.visit} size={32}/> {partido.visit}</div>
               <div className="sub">Elige tu mesa</div>
             </div>
             <p className="help-text">Cada mesa es una porra independiente. Entras pagando esa cantidad de fichas{hayBote?' (media entrada por el bote)':''}.</p>
@@ -159,7 +244,7 @@ export default function App(){
 
         {tab==='jugar' && view==='grupo' && (
           <>
-            <div className="match-banner"><div className="names">{partido.local} <span className="vs">VS</span> {partido.visit}</div><div className="sub">Mesa de {mesa} fichas · tipo de grupo</div></div>
+            <div className="match-banner"><div className="names" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,flexWrap:'wrap'}}><Crest name={partido.local} size={32}/> {partido.local} <span className="vs">VS</span> <Crest name={partido.visit} size={32}/> {partido.visit}</div><div className="sub">Mesa de {mesa} fichas · tipo de grupo</div></div>
             <div className="opt-list">
               <button className="opt-btn" onClick={()=>entrarGrupo('abierto')}>
                 <div className="opt-main"><div className="opt-icon">🌐</div><div><div className="opt-title">Grupo abierto</div><div className="opt-desc">Gente aleatoria · hasta {MAX_JUGADORES} jugadores</div></div></div>
@@ -213,7 +298,7 @@ export default function App(){
         {tab==='jugar' && view==='resultado' && resultado && (
           <>
             <div className="result-score">
-              <div className="match-sub">{resultado.partido.local} vs {resultado.partido.visit}</div>
+              <div className="match-sub" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:7,flexWrap:'wrap'}}><Crest name={resultado.partido.local} size={22}/> {resultado.partido.local} vs <Crest name={resultado.partido.visit} size={22}/> {resultado.partido.visit}</div>
               <div className="big">{resultado.real}</div>
               <div className="yours">Tu pronóstico: {resultado.tuRes}</div>
             </div>
