@@ -5,6 +5,7 @@ import { usePersistentState } from './usePersistentState.js';
 import SplashScreen from './SplashScreen.jsx';
 import CompetitionSelect from './CompetitionSelect.jsx';
 import ModalidadSelect from './ModalidadSelect.jsx';
+import ElBarroSelect from './ElBarroSelect.jsx';
 import PorraCaliente from './PorraCaliente.jsx';
 
 // Migración única: las claves antiguas globales pasan a ser por competición
@@ -92,6 +93,8 @@ export default function App(){
   const compObj = COMPETICIONES[cid];
   // Modalidad elegida tras la competición (null = pantalla de modalidad).
   const [modalidad, setModalidad] = useState(null);
+  // Submodo dentro de EL BARRO (null = pantalla ElBarroSelect; 'calentada' = porra random).
+  const [barroSub, setBarroSub] = useState(null);
 
   // Saldo: común a todas las competiciones (cartera del usuario).
   const [saldo, setSaldo] = usePersistentState('porra_saldo', FICHAS_INICIO);
@@ -211,8 +214,8 @@ export default function App(){
     return (
       <ModalidadSelect
         compObj={compObj}
-        onSelect={setModalidad}
-        onBack={() => { setModalidad(null); setComp(null); }}
+        onSelect={(m) => { setBarroSub(null); setModalidad(m); }}
+        onBack={() => { setModalidad(null); setBarroSub(null); setComp(null); }}
       />
     );
   }
@@ -229,14 +232,24 @@ export default function App(){
     );
   }
 
-  // modalidad === 'normal' → app de porras normales (intacta)
+  // modalidad === 'normal' (EL BARRO): primero el submenú de submodos.
+  if (!barroSub) {
+    return (
+      <ElBarroSelect
+        onPick={(id) => { if (id === 'calentada') setBarroSub('calentada'); }}
+        onBack={() => { setModalidad(null); setBarroSub(null); }}
+      />
+    );
+  }
+
+  // EL BARRO → Calentada → app de porra random (la mecánica de siempre, intacta)
   return (
     <div className="app-shell">
       <div className="topbar">
         <div className="topbar-title">
           {tab==='jugar' && view==='jornada' && (
             <>
-              <button className="back-btn" onClick={()=>setModalidad(null)} aria-label="Cambiar modalidad">‹</button>
+              <button className="back-btn" onClick={()=>setBarroSub(null)} aria-label="Cambiar submodo">‹</button>
               <span className="pill" style={{ background: compObj.color }}>{compObj.pill}</span>
             </>
           )}
