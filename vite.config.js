@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Porra LaLiga',
-        short_name: 'Porra',
+        name: 'QUINI-BRO',
+        short_name: 'QUINI-BRO',
         description: 'Porras de resultado exacto de LaLiga',
         theme_color: '#0a0e0c',
         background_color: '#0a0e0c',

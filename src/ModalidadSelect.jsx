@@ -3,8 +3,8 @@
 export default function ModalidadSelect({ compObj, onSelect, onBack }) {
   const m = compObj?.modalidades || { normal: true, calentada: true, heroe: true };
   const todas = [
-    { id: 'normal', icono: '🎲', titulo: 'Porra Normal', desc: 'Juega contra gente aleatoria por el bote.', color: '#16c264' },
-    { id: 'caliente', icono: '🔥', titulo: 'Porra Caliente', desc: 'Entre amigos: Calentada o Modo Héroe.', color: '#f5c542' },
+    { id: 'normal', icono: '🎲', titulo: 'EL BARRO', desc: 'Juega contra gente aleatoria por el bote.', color: '#16c264' },
+    { id: 'caliente', icono: '🔥', titulo: 'BROS', desc: 'Entre amigos: Calentada o El Trono.', color: '#f5c542' },
   ];
   // Solo se muestran las modalidades que soporta la competición.
   const opciones = todas.filter((o) => (o.id === 'normal' ? m.normal : (m.calentada || m.heroe)));

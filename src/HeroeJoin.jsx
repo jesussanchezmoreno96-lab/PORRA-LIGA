@@ -12,7 +12,7 @@ export default function HeroeJoin({ saldo, onUnirse, onBack }) {
   const valido = limpio.length === 6;
   return (
     <div style={wrap}>
-      <Header titulo="Unirse a un grupo" sub="Modo Héroe" onBack={onBack} />
+      <Header titulo="Unirse a un grupo" sub="El Trono" onBack={onBack} />
       <div style={{ fontSize: 13.5, color: 'var(--text-dim)', lineHeight: 1.5, marginBottom: 16 }}>
         Introduce el código de 6 caracteres que te ha pasado el creador del grupo.
       </div>

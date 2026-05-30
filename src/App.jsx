@@ -253,7 +253,7 @@ export default function App(){
           )}
           {tab!=='jugar' && (
             <>
-              <span>Porra</span>
+              <span>QUINI-BRO</span>
               <span className="pill" style={{ background: compObj.color }}>{compObj.pill}</span>
             </>
           )}

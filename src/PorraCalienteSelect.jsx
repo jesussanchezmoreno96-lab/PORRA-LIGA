@@ -2,7 +2,7 @@
 export default function PorraCalienteSelect({ onPick, onBack }) {
   const opciones = [
     { id: 'calentada', icono: '⚡', titulo: 'Calentada', desc: 'Un partido suelto en grupo cerrado con código.', color: '#16c264' },
-    { id: 'heroe', icono: '🦸', titulo: 'Modo Héroe', desc: 'Liguilla de 5 jornadas. Entrada 20 fichas.', color: '#f5c542' },
+    { id: 'heroe', icono: '🦸', titulo: 'El Trono', desc: 'Liguilla de 5 jornadas. Entrada 20 fichas.', color: '#f5c542' },
   ];
   return (
     <div className="pcs-root">
@@ -11,7 +11,7 @@ export default function PorraCalienteSelect({ onPick, onBack }) {
         <div className="pcs-head">
           <button className="pcs-back" onClick={onBack} aria-label="Volver">‹</button>
           <div>
-            <div className="pcs-kicker">🔥 Porra Caliente</div>
+            <div className="pcs-kicker">🔥 BROS</div>
             <h1 className="pcs-title">Elige submodo</h1>
           </div>
         </div>

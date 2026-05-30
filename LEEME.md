@@ -1,4 +1,4 @@
-# Porra LaLiga — Prototipo PWA
+# QUINI-BRO — Prototipo PWA
 
 App de porras de resultado exacto de LaLiga. Un jugador real contra bots, para validar la mecánica antes de invertir en backend y licencias.
 

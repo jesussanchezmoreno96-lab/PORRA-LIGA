@@ -18,7 +18,7 @@ export default function HeroeCreate({ compObj, saldo, onCrear, onBack }) {
     : (compObj.partidos?.length || 0) >= h.partidosPorJornada;
   return (
     <div style={wrap}>
-      <Header titulo="Crear Modo Héroe" sub={compObj.nombre} onBack={onBack} />
+      <Header titulo="Crear El Trono" sub={compObj.nombre} onBack={onBack} />
       <div style={{ ...card, lineHeight: 1.5, fontSize: 13.5, color: 'var(--text-dim)' }}>
         <div style={{ color: 'var(--text)', fontWeight: 800, fontSize: 15, marginBottom: 8 }}>🦸 Liguilla competitiva</div>
         • Grupo cerrado, hasta <b style={bb}>{HEROE_MAX_JUGADORES} jugadores</b>.<br />
@@ -33,7 +33,7 @@ export default function HeroeCreate({ compObj, saldo, onCrear, onBack }) {
         </div>
         <div style={{ textAlign: 'right', fontSize: 12, color: 'var(--text-dim)' }}>Tu saldo<br /><b style={{ color: 'var(--text)', fontSize: 16 }}>{saldo}</b></div>
       </div>
-      {!hayPartidos && <Aviso txt="Esta competición no tiene partidos suficientes para el Modo Héroe." />}
+      {!hayPartidos && <Aviso txt="Esta competición no tiene partidos suficientes para El Trono." />}
       {hayPartidos && !puede && <Aviso txt={`Necesitas ${HEROE_ENTRADA} fichas para inscribirte.`} />}
       <button
         onClick={onCrear}

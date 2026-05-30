@@ -134,7 +134,7 @@ export default function PorraCaliente({ compObj, saldo, setSaldo, setIngresosApp
   return null;
 }
 
-function HeroeMenu({ titulo = 'Modo Héroe', sub = 'Liguilla 5 jornadas', crearTxt = 'Crear grupo nuevo', unirseTxt = 'Unirme con código', onCrear, onUnirse, onBack }) {
+function HeroeMenu({ titulo = 'El Trono', sub = 'Liguilla 5 jornadas', crearTxt = 'Crear grupo nuevo', unirseTxt = 'Unirme con código', onCrear, onUnirse, onBack }) {
   return (
     <div style={wrap}>
       <Header titulo={titulo} sub={sub} onBack={onBack} />

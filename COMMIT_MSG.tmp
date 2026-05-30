@@ -1,0 +1,12 @@
+feat(ui): QUINI-BRO + portada asimetrica con balon Telstar y rename de modalidades
+
+- Rename de la app QUINIELA BRO -> QUINI-BRO (splash, topbar, title,
+  manifest PWA, LEEME).
+- Portada SplashScreen con composicion asimetrica (QUINI -2deg, guion
+  dorado diagonal, BRO +3deg) y la "O" de BRO como balon Telstar SVG
+  girando lento (respeta prefers-reduced-motion).
+- Rename solo de UI de las modalidades: Porra Normal -> EL BARRO,
+  Porra Caliente -> BROS, Modo Heroe -> El Trono (Calentada se mantiene).
+  Sin tocar IDs, claves de localStorage, funciones ni variables.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>

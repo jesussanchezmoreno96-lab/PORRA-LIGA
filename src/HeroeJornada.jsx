@@ -24,7 +24,7 @@ export default function HeroeJornada({ grupo, onCerrar, onVerClasif, onExit }) {
 
   return (
     <div style={wrap}>
-      <Header titulo="Modo Héroe" sub={`Código ${grupo.codigo} · ${grupo.jugadores.length} jugadores`} onBack={onExit} />
+      <Header titulo="El Trono" sub={`Código ${grupo.codigo} · ${grupo.jugadores.length} jugadores`} onBack={onExit} />
 
       {/* Barra de fases (jornadas o días) */}
       <div style={{ display: 'flex', gap: 7, marginBottom: 16 }}>

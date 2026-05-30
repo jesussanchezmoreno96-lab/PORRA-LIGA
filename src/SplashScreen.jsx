@@ -1,4 +1,4 @@
-// SplashScreen — portada de bienvenida de "QUINIELA BRO".
+// SplashScreen — portada de bienvenida de "QUINI-BRO".
 // Capa puramente visual: se muestra una vez por sesión (ver App.jsx) y al
 // pulsar ¡JUGAR! desaparece. No contiene lógica de juego.
 //
@@ -17,6 +17,45 @@ const BALONES = [
   { left: '18%', top: '72%', size: 40, dur: 8,  delay: 0.6, drift: 22 },
   { left: '82%', top: '74%', size: 30, dur: 6.5, delay: 2,  drift: 16 },
 ];
+
+// Geometría del balón Telstar (dibujado, NO emoji): pentágono central + 5
+// pentágonos en el borde (recortados por el círculo) + 5 costuras radiales.
+// Simetría de 5 → gira limpio. Calculado una vez al cargar el módulo.
+const BALL = (() => {
+  const C = 50, D = 40, rC = 14, rO = 11;
+  const pent = (cx, cy, rho, startDeg) =>
+    Array.from({ length: 5 }, (_, m) => {
+      const a = ((startDeg + m * 72) * Math.PI) / 180;
+      return `${(cx + rho * Math.cos(a)).toFixed(2)},${(cy + rho * Math.sin(a)).toFixed(2)}`;
+    }).join(' ');
+  const central = pent(C, C, rC, -90);
+  const outers = []; const seams = [];
+  for (let k = 0; k < 5; k++) {
+    const th = -90 + k * 72; const rad = (th * Math.PI) / 180;
+    const ox = C + D * Math.cos(rad); const oy = C + D * Math.sin(rad);
+    outers.push(pent(ox, oy, rO, th + 180)); // un vértice apunta al centro
+    const cvx = C + rC * Math.cos(rad); const cvy = C + rC * Math.sin(rad);
+    const ir = ((th + 180) * Math.PI) / 180;
+    seams.push([cvx, cvy, ox + rO * Math.cos(ir), oy + rO * Math.sin(ir)]);
+  }
+  return { central, outers, seams };
+})();
+
+function BallSVG() {
+  return (
+    <svg className="qb-ball" viewBox="0 0 100 100" aria-hidden="true">
+      <defs><clipPath id="qb-ballclip"><circle cx="50" cy="50" r="48" /></clipPath></defs>
+      <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#0a0e0c" strokeWidth="2.5" />
+      <g clipPath="url(#qb-ballclip)" fill="#0a0e0c" stroke="#0a0e0c" strokeWidth="0.6" strokeLinejoin="round">
+        <polygon points={BALL.central} />
+        {BALL.outers.map((p, i) => <polygon key={i} points={p} />)}
+      </g>
+      <g clipPath="url(#qb-ballclip)" stroke="#0a0e0c" strokeWidth="2.5" strokeLinecap="round">
+        {BALL.seams.map((s, i) => <line key={i} x1={s[0]} y1={s[1]} x2={s[2]} y2={s[3]} />)}
+      </g>
+    </svg>
+  );
+}
 
 export default function SplashScreen({ onPlay }) {
   return (
@@ -45,9 +84,10 @@ export default function SplashScreen({ onPlay }) {
 
       {/* Contenido */}
       <div className="splash-content">
-        <h1 className="splash-title">
-          <span className="splash-line">QUINIELA</span>
-          <span className="splash-line splash-bro">BRO</span>
+        <h1 className="splash-logo" aria-label="QUINI-BRO">
+          <span className="qb-quini">QUINI</span>
+          <span className="qb-dash" aria-hidden="true">–</span>
+          <span className="qb-bro">BR<BallSVG /></span>
         </h1>
 
         <p className="splash-slogan">{ESLOGAN}</p>
@@ -93,31 +133,63 @@ const splashCss = `
   width: 100%; max-width: 480px;
   display: flex; flex-direction: column; align-items: center; text-align: center;
 }
-.splash-title {
+/* --- Logo "QUINI-BRO": composición asimétrica en dos líneas --- */
+/* QUINI (blanco, izquierda, -2°) · guion dorado diagonal flotando ·
+   BRO (verde, derecha, +3°, ~20% más grande, con solape sutil). */
+.splash-logo {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto 6px;
   font-family: 'Archivo', sans-serif;
   font-weight: 900;
   letter-spacing: -0.04em;
-  line-height: 0.9;
-  margin: 0;
-  display: flex; flex-direction: column; align-items: center;
+  line-height: 0.82;
+  display: flex; flex-direction: column;
 }
-.splash-line { display: block; }
-.splash-title .splash-line:first-child {
-  font-size: clamp(46px, 16vw, 84px);
+.qb-quini {
+  align-self: flex-start;
+  margin-left: 4%;
+  position: relative; z-index: 2;
+  font-size: clamp(52px, 17vw, 96px);
   color: var(--text, #f2f5f3);
+  transform: rotate(-2deg);
 }
-/* "BRO" — acento dorado (#f5c542). Para volver a verde: color: var(--green) y
-   text-shadow con rgba(22,194,100,...) */
-.splash-bro {
-  font-size: clamp(64px, 23vw, 124px);
+.qb-bro {
+  align-self: flex-end;
+  margin-right: 3%;
+  margin-top: -0.14em;       /* solape sutil con QUINI */
+  position: relative; z-index: 2;
+  font-size: clamp(64px, 21vw, 116px); /* ~20% mayor que QUINI */
+  color: var(--green, #16c264);
+  transform: rotate(3deg);
+  text-shadow: 0 6px 26px rgba(22,194,100,0.28);
+}
+/* Balón Telstar como "O" de BRO: tamaño de letra, en línea base, girando lento.
+   Solo gira el balón (su transform se compone con el +3° de la palabra). */
+.qb-ball {
+  display: inline-block;
+  width: 0.82em; height: 0.82em;
+  vertical-align: -0.06em;
+  margin-left: -0.01em;
+  transform-origin: 50% 50%;
+  animation: qb-spin 9s linear infinite;
+}
+@keyframes qb-spin { to { transform: rotate(360deg); } }
+
+/* Guion como elemento gráfico: dorado, grande, diagonal, flotando en el hueco */
+.qb-dash {
+  position: absolute; z-index: 3;
+  left: 49%; top: 47%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: clamp(58px, 18vw, 104px);
   color: var(--gold, #f5c542);
-  transform: rotate(-3deg);
-  text-shadow: 0 6px 28px rgba(245,197,66,0.32);
-  margin-top: -0.06em;
+  text-shadow: 0 4px 22px rgba(245,197,66,0.45);
+  line-height: 1; pointer-events: none;
 }
 
 .splash-slogan {
-  margin: 22px 0 38px;
+  margin: 26px 0 38px;
   font-family: 'Archivo', sans-serif;
   font-weight: 600;
   font-size: clamp(15px, 4.6vw, 19px);
@@ -153,6 +225,6 @@ const splashCss = `
 
 /* Respeta la preferencia de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
-  .splash-ball, .splash-play { animation: none; }
+  .splash-ball, .splash-play, .qb-ball { animation: none; }
 }
 `;
