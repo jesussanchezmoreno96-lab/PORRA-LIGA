@@ -5,6 +5,9 @@ node_modules/
 *.log
 npm-debug.log*
 
+# Temporal de mensajes de commit
+COMMIT_MSG.tmp
+
 # Sistema / editor
 .DS_Store
 .vscode/
