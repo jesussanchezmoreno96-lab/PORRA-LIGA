@@ -26,7 +26,16 @@ export default function CompetitionSelect({ onSelect }) {
             <button
               key={c.id}
               className={'comp-card' + (c.activa ? '' : ' is-soon')}
-              style={{ '--accent': c.color }}
+              style={{
+                '--accent': c.color,
+                // Fondo atmosférico opcional por competición (Champions), con
+                // overlay oscuro para mantener legible el texto del card.
+                ...(c.cardBg ? {
+                  backgroundImage: `linear-gradient(90deg, rgba(16,20,18,0.93), rgba(16,20,18,0.62)), url('${c.cardBg}')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                } : {}),
+              }}
               disabled={!c.activa}
               onClick={() => c.activa && onSelect(c.id)}
               aria-label={c.nombre + (c.activa ? '' : ' (próximamente)')}

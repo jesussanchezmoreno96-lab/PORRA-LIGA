@@ -23,6 +23,9 @@ export const COMPETICIONES = {
       { id: 9, local: 'Valencia', visit: 'Barça' },
       { id: 10, local: 'Girona', visit: 'Elche' },
     ],
+    // Modalidades soportadas y configuración del Modo Héroe.
+    modalidades: { normal: true, calentada: true, heroe: true },
+    heroe: { jornadas: 5, partidosPorJornada: 5, etiquetas: null, dias: null },
   },
   hypermotion: {
     id: 'hypermotion',
@@ -34,6 +37,43 @@ export const COMPETICIONES = {
     activa: false,             // "Próximamente" — visible pero deshabilitada
     jornada: 42,
     partidos: [],
+    modalidades: { normal: true, calentada: true, heroe: true },
+    heroe: { jornadas: 5, partidosPorJornada: 5, etiquetas: null, dias: null },
+  },
+  champions: {
+    id: 'champions',
+    nombre: 'UEFA Champions League',
+    division: 'Competición continental',
+    pill: 'Champions',
+    color: '#3b6fe0',          // azul europeo (icono genérico, sin marca UEFA)
+    icono: '⭐',
+    activa: true,
+    jornada: 1,
+    // Champions: porra normal (grupo abierto), Calentada y Modo Héroe.
+    modalidades: { normal: true, calentada: true, heroe: true },
+    // Variante SEMANAL del Héroe: 2 fases (Martes/Miércoles) de 3 partidos = 6.
+    // Desbloqueo secuencial martes → miércoles, reparto al cerrar la 2ª fase.
+    heroe: { jornadas: 2, partidosPorJornada: 3, etiquetas: ['Martes', 'Miércoles'], dias: ['martes', 'miércoles'] },
+    // Fondo atmosférico del card en CompetitionSelect (Unsplash, licencia libre).
+    cardBg: 'https://images.unsplash.com/photo-1676746424139-77f8bd8922a8?w=1200&q=70&auto=format&fit=crop',
+    // IMPORTANTE: la lista de 32 clubes de Champions cambia cada temporada.
+    // Esta es una lista provisional de 16 clubes plausibles para probar la
+    // mecánica. Al inicio de cada temporada de Champions, reemplazar por los
+    // 32 reales clasificados (y ampliar estos partidos de ejemplo).
+    partidos: [
+      // Martes
+      { id: 1, local: 'Real Madrid', visit: 'Manchester City', dia: 'martes' },
+      { id: 2, local: 'Bayern Múnich', visit: 'PSG', dia: 'martes' },
+      { id: 3, local: 'Inter', visit: 'Arsenal', dia: 'martes' },
+      { id: 4, local: 'Liverpool', visit: 'Atalanta', dia: 'martes' },
+      { id: 5, local: 'Barcelona', visit: 'Benfica', dia: 'martes' },
+      // Miércoles
+      { id: 6, local: 'Atlético Madrid', visit: 'Borussia Dortmund', dia: 'miércoles' },
+      { id: 7, local: 'Milan', visit: 'Ajax', dia: 'miércoles' },
+      { id: 8, local: 'Juventus', visit: 'Porto', dia: 'miércoles' },
+      { id: 9, local: 'PSG', visit: 'Liverpool', dia: 'miércoles' },
+      { id: 10, local: 'Arsenal', visit: 'Barcelona', dia: 'miércoles' },
+    ],
   },
 };
 
@@ -64,6 +104,22 @@ export const EQUIPOS = {
   'Rayo Vallecano': { teamId: 728, logo: API_LOGO(728) },
   'Elche':          { teamId: 797, logo: API_LOGO(797) },
   'Mallorca':       { teamId: 798, logo: API_LOGO(798) },
+  // Clubes europeos (Champions). IDs api-sports verificados.
+  'Barcelona':         { teamId: 529, logo: API_LOGO(529) },
+  'Atlético Madrid':   { teamId: 530, logo: API_LOGO(530) },
+  'Liverpool':         { teamId: 40,  logo: API_LOGO(40) },
+  'Manchester City':   { teamId: 50,  logo: API_LOGO(50) },
+  'Arsenal':           { teamId: 42,  logo: API_LOGO(42) },
+  'Bayern Múnich':     { teamId: 157, logo: API_LOGO(157) },
+  'Borussia Dortmund': { teamId: 165, logo: API_LOGO(165) },
+  'PSG':               { teamId: 85,  logo: API_LOGO(85) },
+  'Inter':             { teamId: 505, logo: API_LOGO(505) },
+  'Milan':             { teamId: 489, logo: API_LOGO(489) },
+  'Juventus':          { teamId: 496, logo: API_LOGO(496) },
+  'Atalanta':          { teamId: 499, logo: API_LOGO(499) },
+  'Benfica':           { teamId: 211, logo: API_LOGO(211) },
+  'Ajax':              { teamId: 194, logo: API_LOGO(194) },
+  'Porto':             { teamId: 212, logo: API_LOGO(212) },
 };
 
 // Devuelve la URL del escudo de un equipo por nombre, o null si no está.
@@ -74,6 +130,14 @@ export function logoEquipo(name) {
 // Alias de compatibilidad (la competición por defecto).
 export const JORNADA_INICIAL = COMPETICIONES[COMPETICION_DEFAULT].jornada;
 export const PARTIDOS = COMPETICIONES[COMPETICION_DEFAULT].partidos;
+
+// --- Modelo de comisiones de la casa (ajustables para el modelo de negocio) ---
+// Comisión sobre el premio: 10% del bote total se descuenta ANTES de repartir
+// el premio entre el/los ganador(es).
+export const COMISION_PREMIO = 0.10;
+// Comisión por retirada: de la mitad que el jugador pierde al retirarse de un
+// bote no acertado, este % se lo queda la casa (el resto vuelve al bote).
+export const COMISION_RETIRADA = 0.20;
 
 export const MESAS = [2, 5, 10];
 export const FICHAS_INICIO = 100;

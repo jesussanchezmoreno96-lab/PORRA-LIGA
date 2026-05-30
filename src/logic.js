@@ -1,5 +1,6 @@
 import {
   NOMBRES_BOT, MARCADORES_PROBABLES, MAX_POR_RESULTADO,
+  COMISION_PREMIO, COMISION_RETIRADA,
 } from './data.js';
 
 // Genera N bots con resultados respetando el máx de 2 por marcador
@@ -46,27 +47,52 @@ export function simularResultadoReal() {
 }
 
 // Resuelve la porra. Devuelve quién gana, premios y estado del bote.
-export function resolverPorra({ jugadores, boteTotal, resultadoReal, costeEntrada }) {
+export function resolverPorra({ jugadores, boteTotal, resultadoReal }) {
   const ganadores = jugadores.filter((j) => j.res === resultadoReal);
 
   if (ganadores.length === 0) {
-    // Nadie acierta: el bote se acumula entero a la siguiente jornada
+    // Regla 4: nadie acierta y el bote sigue vivo → se acumula entero a la
+    // siguiente jornada. La casa NO toca nada.
     return {
       ganadores: [],
       premioPorGanador: 0,
+      comisionApp: 0,
       boteAcumulado: boteTotal,
       hayGanador: false,
     };
   }
 
-  const premioPorGanador = Math.round(boteTotal / ganadores.length);
+  // Regla 1: la casa cobra COMISION_PREMIO del bote ANTES de repartir.
+  const comisionApp = Math.round(boteTotal * COMISION_PREMIO);
+  const repartible = boteTotal - comisionApp;
+  const premioPorGanador = Math.round(repartible / ganadores.length);
   return {
     ganadores,
-    premioPorGanador,
+    premioPorGanador, // neto, ya descontada la comisión
+    comisionApp,
     boteAcumulado: 0,
     hayGanador: true,
     compartido: ganadores.length > 1,
   };
+}
+
+// Regla 2: reparto de una retirada tras un bote no acertado.
+// El jugador recupera la mitad de su apuesta (no cambia para él). De la otra
+// mitad que pierde, COMISION_RETIRADA va a la casa y el resto vuelve al bote.
+export function calcularRetirada(mesa) {
+  const devolucionJugador = Math.round(mesa / 2);
+  const perdida = mesa - devolucionJugador;
+  const alaApp = Math.round(perdida * COMISION_RETIRADA);
+  const alBote = perdida - alaApp;
+  return { devolucionJugador, alBote, alaApp };
+}
+
+// Regla 3: bote inválido. Si TODOS los jugadores se retiran, o queda un solo
+// jugador en una jornada con bote y falla, el bote entero va a la casa.
+// Devuelve cuánto se lleva la casa y deja el bote a 0. (Hook del modelo: la UI
+// single-player actual no lo dispara, pero queda listo para atarlo a un flujo.)
+export function boteInvalidoALaCasa(bote) {
+  return { alaApp: bote, boteRestante: 0 };
 }
 
 // Calcula el coste de entrada según haya bote o no

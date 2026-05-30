@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { COMPETICIONES, MESAS, FICHAS_INICIO, MIN_JUGADORES, MAX_JUGADORES, logoEquipo } from './data.js';
-import { generarBots, contarResultados, resultadoDisponible, simularResultadoReal, resolverPorra, costeEntrada } from './logic.js';
+import { generarBots, contarResultados, resultadoDisponible, simularResultadoReal, resolverPorra, costeEntrada, calcularRetirada } from './logic.js';
 import { usePersistentState } from './usePersistentState.js';
 import SplashScreen from './SplashScreen.jsx';
 import CompetitionSelect from './CompetitionSelect.jsx';
+import ModalidadSelect from './ModalidadSelect.jsx';
+import PorraCaliente from './PorraCaliente.jsx';
 
 // Migración única: las claves antiguas globales pasan a ser por competición
 // (LaLiga EA Sports). El saldo (porra_saldo) es común y no se migra.
@@ -88,9 +90,14 @@ export default function App(){
   const [comp, setComp] = useState(null);
   const cid = comp || 'laliga';                 // id efectivo para las claves
   const compObj = COMPETICIONES[cid];
+  // Modalidad elegida tras la competición (null = pantalla de modalidad).
+  const [modalidad, setModalidad] = useState(null);
 
   // Saldo: común a todas las competiciones (cartera del usuario).
   const [saldo, setSaldo] = usePersistentState('porra_saldo', FICHAS_INICIO);
+  // Ingresos acumulados de la casa (comisiones + botes inválidos). Global,
+  // como el saldo: es el P&L del negocio, no del juego por competición.
+  const [ingresosApp, setIngresosApp] = usePersistentState('porra_ingresos_app', 0);
   // Bote, jornada e historial: independientes por competición.
   const [historial, setHistorial] = usePersistentState(`porra_historial_${cid}`, []);
   const [bote, setBote] = usePersistentState(`porra_bote_${cid}`, 0);
@@ -109,8 +116,9 @@ export default function App(){
   const hayBote = bote > 0;
 
   function reset(){
-    if(!confirm('¿Reiniciar el juego? Perderás saldo, historial y bote.')) return;
+    if(!confirm('¿Reiniciar el juego? Perderás saldo, historial, bote y comisión de la casa.')) return;
     setSaldo(FICHAS_INICIO); setHistorial([]); setBote(0); setJornada(compObj.jornada);
+    setIngresosApp(0); // borrón y cuenta nueva: la comisión de la casa también se resetea
     setView('jornada'); setTab('jugar');
   }
 
@@ -154,10 +162,13 @@ export default function App(){
     }
     setSaldo(saldoFinal);
 
+    // Regla 1: si alguien acierta (jugador o bot), la casa cobra su comisión.
+    if(r.hayGanador && r.comisionApp > 0) setIngresosApp(a=>a+r.comisionApp);
+
     const gane = r.hayGanador && r.ganadores.some(g=>g.nombre==='Tú');
     setResultado({
       partido, real, tuRes: res, gane,
-      compartido: r.compartido, premio: r.premioPorGanador,
+      compartido: r.compartido, premio: r.premioPorGanador, comisionApp: r.comisionApp,
       boteAcumulado: r.boteAcumulado, mesa, hayBote, delta,
     });
     setHistorial([{ jornada, match:`${partido.local} ${real} ${partido.visit}`, tuRes:res, mesa, delta, gane }, ...historial].slice(0,50));
@@ -165,7 +176,17 @@ export default function App(){
   }
 
   function seguirBote(){ setJornada(j=>j+1); volverInicio(); }
-  function retirarse(){ const dev = Math.round(mesa/2); setSaldo(s=>s+dev); setBote(0); setJornada(j=>j+1); volverInicio(); }
+  function retirarse(){
+    // Regla 2: el jugador recupera la mitad (igual que antes). De lo que pierde,
+    // la casa cobra COMISION_RETIRADA y el resto (alBote) se queda en el bote
+    // para quien continúe (el bote NO se vacía).
+    const { devolucionJugador, alBote, alaApp } = calcularRetirada(mesa);
+    setSaldo(s=>s+devolucionJugador);
+    if(alaApp > 0) setIngresosApp(a=>a+alaApp);
+    setBote(alBote);
+    setJornada(j=>j+1);
+    volverInicio();
+  }
   function siguienteJornada(){ setJornada(j=>j+1); volverInicio(); }
   function volverInicio(){ setPartido(null); setMesa(null); setGrupo(null); setResultado(null); setView('jornada'); setTab('jugar'); }
 
@@ -186,13 +207,36 @@ export default function App(){
     return <CompetitionSelect onSelect={setComp} />;
   }
 
+  if (!modalidad) {
+    return (
+      <ModalidadSelect
+        compObj={compObj}
+        onSelect={setModalidad}
+        onBack={() => { setModalidad(null); setComp(null); }}
+      />
+    );
+  }
+
+  if (modalidad === 'caliente') {
+    return (
+      <PorraCaliente
+        compObj={compObj}
+        saldo={saldo}
+        setSaldo={setSaldo}
+        setIngresosApp={setIngresosApp}
+        onExit={() => setModalidad(null)}
+      />
+    );
+  }
+
+  // modalidad === 'normal' → app de porras normales (intacta)
   return (
     <div className="app-shell">
       <div className="topbar">
         <div className="topbar-title">
           {tab==='jugar' && view==='jornada' && (
             <>
-              <button className="back-btn" onClick={()=>setComp(null)} aria-label="Cambiar competición">‹</button>
+              <button className="back-btn" onClick={()=>setModalidad(null)} aria-label="Cambiar modalidad">‹</button>
               <span className="pill" style={{ background: compObj.color }}>{compObj.pill}</span>
             </>
           )}
@@ -333,6 +377,7 @@ export default function App(){
                 <div className="ico">🏆</div>
                 <div className="headline">¡Acertaste!</div>
                 <div className="detail">{resultado.compartido?'Compartido con otra persona (50/50). ':''}Ganas <b>{resultado.premio} fichas</b>.</div>
+                <div style={{fontSize:11,color:'var(--text-faint)',marginTop:8}}>Comisión de la casa: {resultado.comisionApp} fichas</div>
               </div>
             ) : (
               <div className="result-box lose">
@@ -376,6 +421,7 @@ export default function App(){
               <div className="stat-card"><div className="label">Porras</div><div className="value">{historial.length}</div></div>
             </div>
             <div className="stat-card"><div className="label">Aciertos</div><div className="value">{historial.filter(h=>h.gane).length} / {historial.length}</div></div>
+            <div className="stat-card" style={{marginTop:11}}><div className="label">Comisión generada para la casa</div><div className="value" style={{color:'var(--gold)'}}>{ingresosApp}</div></div>
             <button className="reset-link" onClick={reset}>Reiniciar juego</button>
           </>
         )}
