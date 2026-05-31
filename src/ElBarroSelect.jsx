@@ -4,10 +4,10 @@
 import PorraCalienteSelect from './PorraCalienteSelect.jsx';
 
 const OPCIONES_BARRO = [
-  { id: 'calentada', icono: '⚡', titulo: 'Calentada', desc: 'Un partido suelto contra gente aleatoria.', color: '#16c264' },
+  { id: 'calentada', icono: '⚡', titulo: 'Calentada', desc: 'Un partido, una porra. ¿Te la juegas?', color: '#ff6b3d' },
   {
     id: 'heroe', icono: '🦸', titulo: 'El Trono',
-    desc: 'Liguilla de 5 jornadas contra gente aleatoria. Disponible cuando lancemos el multijugador real.',
+    desc: 'Liguilla contra random. Pronto, con multijugador real.',
     color: '#f5c542', disabled: true,
   },
 ];
